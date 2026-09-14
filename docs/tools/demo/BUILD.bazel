@@ -14,6 +14,7 @@ py_binary(
     name = "render_vhs_demo",
     srcs = ["render_vhs_demo.py"],
     python_version = "PY3",
+    deps = ["//tools/wine:environment"],
 )
 
 py_test(

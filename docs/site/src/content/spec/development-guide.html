@@ -83,6 +83,17 @@
     bytes include repeated worker reads, not just downloads to the CI runner.
   </p>
   <p>
+    Wine tests, functional checks, and demos share the digest in
+    <code>tools/wine/image.txt</code>. Normal CI pulls that public GHCR image;
+    it does not install Wine from apt or rebuild a Docker image. Docker remains
+    a host service. Use <code>aspect hovel-ci image-lock</code> to refresh the
+    checksum-locked package inputs and <code>aspect hovel-ci image-build</code>
+    to validate an offline image build. The trusted Wine environment workflow
+    publishes image updates; update the checked-in digest only after its tests
+    pass and anonymous pulls work. An explicit <code>HOVEL_WINE_BIN</code>
+    retains the host-Wine adapter for local operator use.
+  </p>
+  <p>
     Aspect adds invocation metadata following the
     <a href="https://www.buildbuddy.io/docs/guide-metadata/">BuildBuddy metadata guide</a>:
     repository, checked-out commit, branch, and worktree state. GitHub runs also carry

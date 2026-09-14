@@ -19,7 +19,7 @@ def _impl(ctx: TaskContext) -> int:
         return ctx.std.process.command("python3").args([root + "/" + scripts[mode]] + extra).current_dir(root).spawn().wait().code or 0
     if mode == "wine":
         # Wine is a host service; compilation still uses the selected RBE backend.
-        steps = [
+        steps = [(["run", "//tools/wine:image_tool", "--", "prepare"], root)] + [
             (["test", "--bazel-flag=--strategy=TestRunner=local", "--bazel-flag=--platforms=//platforms:windows_" + arch, "--bazel-flag=--extra_toolchains=@mingw_" + toolchain + "//:toolchain", "--bazel-flag=--run_under=//tools/wine:wine_run", "//:modules_wine_test"], root)
             for arch, toolchain in [("x86", "i686"), ("x64", "x86_64")]
         ]

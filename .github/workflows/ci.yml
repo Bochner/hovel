@@ -143,11 +143,6 @@ jobs:
         with:
           cache-family: wine
           buildbuddy-api-key: ${{ secrets.BUILDBUDDY_API_KEY }}
-      - name: Install demo host tools
-        run: |
-          sudo dpkg --add-architecture i386
-          sudo apt-get update
-          sudo apt-get install -y --install-recommends wine32 wine64
       - name: Verify Wine integration and materialize demo
         run: aspect hovel-ci wine
       - uses: ./.github/actions/finish-hovel
