@@ -90,6 +90,9 @@
     <code>RUNNER_TEMP</code>, and exports its path. Without the secret, fork PRs and
     Dependabot builds use local execution while retaining the same Aspect gates.
     CI metadata configuration alone does not enable a remote service.
+    The setup action disables setup-aspect's additional disk and repository caches:
+    BuildBuddy owns action caching, and the shared GitHub cache stores only dependency
+    downloads. The Aspect launcher and CLI are pinned together.
   </p>
   <p>
     Each job finishes with a table of BuildBuddy invocations and their results,
@@ -99,6 +102,9 @@
     authenticated visibility and default environment redaction. GitHub job checks
     aggregate the Aspect workflow; per-invocation BuildBuddy commit statuses are
     disabled to avoid a competing set of checks.
+    Aspect's automatic GitHub comments, check runs, and artifact uploads are also
+    disabled; the explicit workflow steps own those surfaces without an Aspect API
+    token or extra CI write permissions.
   </p>
   <p>
     CI uses a matrix for the repository, core, SDK, example, module, and agent

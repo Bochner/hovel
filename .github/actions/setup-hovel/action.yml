@@ -24,6 +24,11 @@ runs:
 
     - name: Set up Aspect CLI
       uses: aspect-build/setup-aspect@2306377a61c45954ab2df7c7311698b109364352 # v2026.26.9
+      with:
+        launcher-version: "2026.33.3"
+        # BuildBuddy owns action caching; the step above owns repository caching.
+        disk-cache: "false"
+        repository-cache: "false"
 
     - name: Configure BuildBuddy and invocation capture
       if: inputs.configure-cache == 'true'

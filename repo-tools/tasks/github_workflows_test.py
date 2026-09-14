@@ -92,6 +92,13 @@ def test_pages_promotes_only_trusted_successful_ci_artifacts() -> None:
     assert "name: docs-site" in workflow
 
 
+def test_setup_does_not_mix_disk_action_cache_with_remote_execution() -> None:
+    setup = next(content for name, content in FILES.items() if name.endswith("setup-hovel/action.yml"))
+    assert 'disk-cache: "false"' in setup
+    assert 'repository-cache: "false"' in setup
+    assert 'launcher-version: "2026.33.3"' in setup
+
+
 if __name__ == "__main__":
     suite = unittest.TestSuite(unittest.FunctionTestCase(test) for name, test in list(globals().items()) if name.startswith("test_"))
     raise SystemExit(not unittest.TextTestRunner(verbosity=2).run(suite).wasSuccessful())
