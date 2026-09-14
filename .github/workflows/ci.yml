@@ -4,96 +4,104 @@ on:
   push:
     branches: [main]
   pull_request:
+  merge_group:
   workflow_dispatch:
 
 permissions:
   contents: read
-  id-token: write
 
 concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
-  repo:
-    name: Repository policy and build hygiene
-    runs-on: ubuntu-latest
+  check:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - scope: repo
+            name: Repository policy and build hygiene
+          - scope: core
+            name: Core fmt, lint, build, test
+            release: hovel
+            artifact: hovel-dist
+            path: core/dist/
+          - scope: sdk
+            name: SDK build and test
+          - scope: module-examples
+            name: Module examples build and test
+          - scope: modules
+            name: Modules build and test
+            release: modules
+            artifact: module-packages
+            path: dist/modules/
+          - scope: agent
+            name: Agent integration packages
+            release: agent
+            artifact: agent-integration-packages
+            path: dist/agent/
+    env:
+      HOVEL_CI_SCOPE: ${{ matrix.scope }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
       - uses: ./.github/actions/setup-hovel
+        with:
+          buildbuddy-api-key: ${{ secrets.BUILDBUDDY_API_KEY }}
+      - name: Verify slice
         env:
-          BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
-      - run: python3 repo-tools/tasks/checkout.py status
-      - run: aspect hovel-check repo
-      - if: always()
+          CHECK_SCOPE: ${{ matrix.scope }}
+        run: aspect hovel-check "$CHECK_SCOPE"
+      - name: Build release artifacts
+        if: matrix.release != ''
         env:
-          JOB_STATUS: ${{ job.status }}
-        run: python3 core/tools/ci/job_summary.py repo-quality
-
-  core:
-    name: Core fmt, lint, build, test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-      - uses: ./.github/actions/setup-hovel
-        env:
-          BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
-      - run: python3 repo-tools/tasks/checkout.py status
-      - run: aspect hovel-check core
-      - run: aspect hovel-release hovel
-      - if: failure()
+          RELEASE_KIND: ${{ matrix.release }}
+        run: aspect hovel-release "$RELEASE_KIND"
+      - name: Upload release artifacts
+        if: matrix.artifact != ''
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: core-bazel-testlogs
-          path: core/bazel-testlogs/
-          if-no-files-found: ignore
-      - if: always()
-        env:
-          JOB_STATUS: ${{ job.status }}
-        run: python3 core/tools/ci/job_summary.py ci-build-test
-
-  sdk:
-    name: SDK build and test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-      - uses: ./.github/actions/setup-hovel
-        env:
-          BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
-      - run: aspect hovel-check sdk
-      - if: always()
-        env:
-          JOB_STATUS: ${{ job.status }}
-        run: python3 core/tools/ci/job_summary.py sdk-ci
-
-  modules:
-    name: Modules build and test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-      - uses: ./.github/actions/setup-hovel
-        env:
-          BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
-      - run: aspect hovel-check modules
-      - run: aspect hovel-release modules
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: module-packages
-          path: dist/modules/
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.path }}
           if-no-files-found: error
-      - if: always()
-        env:
-          JOB_STATUS: ${{ job.status }}
-        run: python3 core/tools/ci/job_summary.py modules-ci
+          retention-days: 14
+      - name: Upload failed test evidence
+        if: failure()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: testlogs-${{ matrix.scope }}
+          path: |
+            bazel-testlogs/**/test.log
+            bazel-testlogs/**/test.xml
+            core/bazel-testlogs/**/test.log
+            core/bazel-testlogs/**/test.xml
+          if-no-files-found: ignore
+          retention-days: 7
+      - uses: ./.github/actions/finish-hovel
+        if: always()
+        with:
+          job-status: ${{ job.status }}
 
   docs:
     name: Docs, test report, and Pages artifact
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
       - uses: ./.github/actions/setup-hovel
-        env:
-          BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
+        with:
+          buildbuddy-api-key: ${{ secrets.BUILDBUDDY_API_KEY }}
       - name: Build evidence-backed Pages site
         run: aspect hovel-report
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -102,44 +110,31 @@ jobs:
           path: _site/
           if-no-files-found: error
           include-hidden-files: true
-      - if: always()
-        env:
-          JOB_STATUS: ${{ job.status }}
-        run: python3 core/tools/ci/job_summary.py docs-ci
-
-  agent:
-    name: Agent integration packages
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-      - uses: ./.github/actions/setup-hovel
-        env:
-          BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
-      - run: aspect hovel-check agent
-      - run: aspect hovel-release agent
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+          retention-days: 14
+      - uses: ./.github/actions/finish-hovel
+        if: always()
         with:
-          name: agent-integration-packages
-          path: dist/agent/
-          if-no-files-found: error
+          job-status: ${{ job.status }}
 
   squatter-wine:
     name: Squatter Wine tests and demo
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
       - uses: ./.github/actions/setup-hovel
-        env:
-          BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
+        with:
+          buildbuddy-api-key: ${{ secrets.BUILDBUDDY_API_KEY }}
       - name: Install demo host tools
         run: |
           sudo dpkg --add-architecture i386
           sudo apt-get update
           sudo apt-get install -y --install-recommends wine32 wine64
-      - run: aspect test --bazel-flag=--platforms=//platforms:windows_x86 --bazel-flag=--extra_toolchains=@mingw_i686//:toolchain --bazel-flag=--run_under=//tools/wine:wine_run //:modules_wine_test && aspect test --bazel-flag=--platforms=//platforms:windows_x64 --bazel-flag=--extra_toolchains=@mingw_x86_64//:toolchain --bazel-flag=--run_under=//tools/wine:wine_run //:modules_wine_test
-      - run: aspect run //modules/docker/squatter-wine:functional_test -- --evidence-log=.test-report/jobs/squatter-wine-e2e.log --job-summary=.test-report/jobs/squatter-wine-e2e.json
-      - run: aspect run //docs/tools/demo:materialize_squatter_wine_demo_outputs
-      - if: always()
-        env:
-          JOB_STATUS: ${{ job.status }}
-        run: python3 core/tools/ci/job_summary.py squatter-wine
+      - name: Verify Wine integration and materialize demo
+        run: aspect hovel-ci wine
+      - uses: ./.github/actions/finish-hovel
+        if: always()
+        with:
+          job-status: ${{ job.status }}

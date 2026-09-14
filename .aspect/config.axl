@@ -1,4 +1,5 @@
 load("@aspect//bazel.axl", "BazelTrait")
+load(".aspect/metadata.axl", "metadata_flags")
 
 def _selected_bazel_flags(ctx: ConfigContext) -> list[str]:
     explicit = ctx.std.env.var("HOVEL_BAZEL_ARGS")
@@ -34,12 +35,19 @@ def config(ctx: ConfigContext):
     ctx.tasks["test"].args.targets = ["@hovel_core//:test"]
 
     flags = _selected_bazel_flags(ctx)
+    provenance = metadata_flags(ctx)
+    bep_dir = ctx.std.env.var("HOVEL_BEP_DIR")
+    if bep_dir:
+        ctx.std.fs.create_dir_all(bep_dir)
+        provenance.append("--build_event_json_file=" + bep_dir + "/" + str(ctx.std.process.id()) + ".json")
     startup = ctx.std.env.var("HOVEL_BAZEL_STARTUP_ARGS")
     startup_flags = startup.split() if startup else []
 
     # Preserve the selected backend when a workflow adds --bazel-flag
     # (for example coverage or Picblobs flags). CLI flags remain overrides.
-    ctx.traits[BazelTrait].flags = lambda command_flags: flags + command_flags
+    # Checkout provenance wins over CI-event defaults (manual releases may
+    # check out a different revision). Command flags still override backend flags.
+    ctx.traits[BazelTrait].flags = lambda command_flags: flags + command_flags + provenance
     ctx.traits[BazelTrait].extra_startup_flags = startup_flags
 
     for task_name in ["build", "test"]:

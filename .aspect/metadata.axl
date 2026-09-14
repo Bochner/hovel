@@ -1,0 +1,46 @@
+"""Invocation provenance only; never stamp source identity into build actions."""
+
+def _git(ctx, args):
+    result = ctx.std.process.command("git").args(args).current_dir(ctx.std.env.aspect_root_dir()).stdout("piped").stderr("null").spawn().wait_with_output()
+    return result.stdout.strip() if result.status.code == 0 else ""
+
+def metadata_flags(ctx):
+    env = ctx.std.env
+    commit = _git(ctx, ["rev-parse", "HEAD"])
+    branch = env.var("GITHUB_HEAD_REF") or _git(ctx, ["symbolic-ref", "--quiet", "--short", "HEAD"])
+    metadata = {
+        "COMMIT_SHA": commit,
+        "BRANCH_NAME": branch,
+        "TAG_PROJECT": "hovel",
+        "TAG_WORKTREE": "dirty" if _git(ctx, ["status", "--porcelain", "--untracked-files=normal"]) else "clean",
+        "TAG_STEP": env.var("HOVEL_BUILD_STEP") or "",
+    }
+    if env.var("GITHUB_ACTIONS"):
+        repo = (env.var("GITHUB_SERVER_URL") or "https://github.com") + "/" + (env.var("GITHUB_REPOSITORY") or "vibepwners/hovel")
+        run_id = env.var("GITHUB_RUN_ID") or ""
+        attempt = env.var("GITHUB_RUN_ATTEMPT") or "1"
+        job = env.var("HOVEL_CI_SCOPE") or env.var("GITHUB_JOB") or "ci"
+        metadata.update({
+            "REPO_URL": repo + ".git",
+            "ROLE": "CI",
+            "USER": env.var("GITHUB_ACTOR") or "",
+            "TAG_WORKFLOW": env.var("GITHUB_WORKFLOW") or "",
+            "TAG_JOB": job,
+            "TAG_RUN": run_id,
+            "TAG_ATTEMPT": attempt,
+            "TAG_EVENT": env.var("GITHUB_EVENT_NAME") or "",
+        })
+        links = ["[Source](" + repo + "/commit/" + commit + ")"] if commit else []
+        if run_id:
+            links.append("[GitHub Actions](" + repo + "/actions/runs/" + run_id + "/attempts/" + attempt + ")")
+        ref = env.var("GITHUB_REF") or ""
+        release_tag = env.var("RELEASE_TAG") or ""
+        if ref.startswith("refs/pull/"):
+            links.append("[Pull request](" + repo + "/pull/" + ref.split("/")[2] + ")")
+        if release_tag or ref.startswith("refs/tags/"):
+            metadata["TAG_RELEASE"] = _git(ctx, ["describe", "--tags", "--exact-match", "HEAD"])
+        elif not branch and ref.startswith("refs/heads/") and env.var("GITHUB_SHA") == commit:
+            metadata["BRANCH_NAME"] = ref[len("refs/heads/"):]
+        metadata["BUILDBUDDY_LINKS"] = ",".join(links)
+    # Empty branch explicitly clears an unrelated event branch on a detached tag.
+    return ["--build_metadata=" + key + "=" + value for key, value in metadata.items() if value or key == "BRANCH_NAME"]

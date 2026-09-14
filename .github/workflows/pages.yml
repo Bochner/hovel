@@ -8,10 +8,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  actions: read
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: pages
@@ -19,18 +16,23 @@ concurrency:
 
 jobs:
   build:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
-    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: read
+      actions: read
+      pages: read
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          persist-credentials: false
 
       - uses: ./.github/actions/setup-hovel
+        if: github.event_name == 'workflow_dispatch'
         with:
-          configure-cache: ${{ github.event_name == 'workflow_dispatch' && 'true' || 'false' }}
-        env:
-          BUILDBUDDY_API_KEY: ${{ secrets.BUILDBUDDY_API_KEY }}
+          buildbuddy-api-key: ${{ secrets.BUILDBUDDY_API_KEY }}
 
       - name: Download successful CI site
         if: github.event_name == 'workflow_run'
@@ -52,16 +54,19 @@ jobs:
           path: _site
           include-hidden-files: true
 
-      - name: Job summary
-        if: always()
-        env:
-          JOB_STATUS: ${{ job.status }}
-        run: python3 core/tools/ci/job_summary.py pages-build
+      - uses: ./.github/actions/finish-hovel
+        if: always() && github.event_name == 'workflow_dispatch'
+        with:
+          job-status: ${{ job.status }}
 
   deploy:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    timeout-minutes: 15
+    permissions:
+      pages: write
+      id-token: write
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_repository.full_name == github.repository)
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

@@ -55,6 +55,69 @@
     Bazel-run program with explicit data dependencies.
   </p>
 
+  <h2 id="buildbuddy">BuildBuddy and CI</h2>
+  <p>
+    Select <code>buildbuddy</code> in the ignored <code>.hovel-bazel-config</code>
+    file to use the organization's remote cache, execution service, and build event
+    UI. Both workspaces declare the same digest-pinned Ubuntu worker image with
+    action networking disabled. Language runtimes, compilers, and compiler support
+    libraries are inputs in the Bazel graph; the worker image supplies the OS.
+  </p>
+  <p>
+    Keep the API key in <code>~/.config/hovel/buildbuddy.bazelrc</code> with mode
+    <code>0600</code>. Its only setting is
+    <code>build:buildbuddy --remote_header=x-buildbuddy-api-key=YOUR_KEY</code>.
+    Import that file by its absolute path from both ignored
+    <code>.bazelrc.user</code> and <code>core/.bazelrc.user</code> using
+    <code>try-import /absolute/path/to/buildbuddy.bazelrc</code>.
+    Credentials never belong in tracked rc files or command-line arguments.
+  </p>
+  <p>
+    Aspect adds invocation metadata following the
+    <a href="https://www.buildbuddy.io/docs/guide-metadata/">BuildBuddy metadata guide</a>:
+    repository, checked-out commit, branch, and worktree state. GitHub runs also carry
+    the actor, CI role, workflow, job or matrix scope, run attempt, event, and logical
+    Aspect step. BuildBuddy links lead back to the exact GitHub Actions attempt,
+    source commit, and pull request. The commit describes the actual checkout,
+    including GitHub's PR merge commit, rather than assuming that the event SHA is
+    the source built by a manually selected release. These are invocation fields;
+    changing them does not stamp or invalidate compiled artifacts.
+  </p>
+  <p>
+    Set the GitHub Actions secret <code>BUILDBUDDY_API_KEY</code> to enable remote
+    execution in CI and release jobs. The shared setup action invokes
+    <code>aspect hovel-ci setup</code>, writes a mode-0600 credential rc under
+    <code>RUNNER_TEMP</code>, and exports its path. Without the secret, fork PRs and
+    Dependabot builds use local execution while retaining the same Aspect gates.
+    CI metadata configuration alone does not enable a remote service.
+  </p>
+  <p>
+    Each job finishes with a table of BuildBuddy invocations and their results,
+    including incomplete invocations from failed builds, then removes its credential
+    file. Summaries read only allowlisted fields from local build events; raw event
+    files and rc files are never uploaded as artifacts. Results retain BuildBuddy's
+    authenticated visibility and default environment redaction. GitHub job checks
+    aggregate the Aspect workflow; per-invocation BuildBuddy commit statuses are
+    disabled to avoid a competing set of checks.
+  </p>
+  <p>
+    CI uses a matrix for the repository, core, SDK, example, module, and agent
+    scopes, with separate evidence-backed docs and Wine jobs. The scopes keep their
+    stable check names, continue independently on failure, and have explicit timeouts.
+    Build artifacts are retained for 14 days and failed test logs for seven days.
+    Wine and Docker are host-service boundaries; <code>aspect hovel-ci wine</code>
+    keeps Wine tests on the runner while compilation uses remote workers. The report
+    workflow downloads remote test outputs for the assembled evidence-backed site.
+    Pages promotes the exact artifact from a successful main push; only a manual
+    Pages dispatch rebuilds it. OIDC and write permissions belong to publishing jobs.
+  </p>
+  <p>
+    Runner bootstrap and summary programs use only the host Python standard library
+    through <code>aspect hovel-ci</code>: they must work before Bazel authentication
+    exists and after a build fails. Their regression tests and the pinned Actionlint
+    binary run through <code>aspect hovel-check repo</code>.
+  </p>
+
   <h2 id="done">Definition of done</h2>
   <ol>
     <li>Run the focused scope while iterating.</li>

@@ -1,0 +1,35 @@
+"""GitHub runner integration and host-service workflows."""
+
+load(".aspect/helpers.axl", "run_steps")
+
+def _impl(ctx: TaskContext) -> int:
+    root = ctx.std.env.aspect_root_dir()
+    mode = ctx.args.mode[0]
+    # These stdlib-only programs operate GitHub runner files and credentials.
+    # They must also work before Bazel is configured or after a build fails.
+    scripts = {
+        "setup": "repo-tools/tasks/configure_bazel_cache.py",
+        "summary": "repo-tools/tasks/ci_summary.py",
+        "cleanup": "repo-tools/tasks/configure_bazel_cache.py",
+    }
+    if mode in scripts:
+        extra = ["--cleanup"] if mode == "cleanup" else []
+        return ctx.std.process.command("python3").args([root + "/" + scripts[mode]] + extra).current_dir(root).spawn().wait().code or 0
+    if mode == "wine":
+        # Wine is a host service; compilation still uses the selected RBE backend.
+        steps = [
+            (["test", "--bazel-flag=--test_strategy=standalone", "--bazel-flag=--platforms=//platforms:windows_" + arch, "--bazel-flag=--extra_toolchains=@mingw_" + toolchain + "//:toolchain", "--bazel-flag=--run_under=//tools/wine:wine_run", "//:modules_wine_test"], root)
+            for arch, toolchain in [("x86", "i686"), ("x64", "x86_64")]
+        ]
+        steps.extend([
+            (["run", "//modules/docker/squatter-wine:functional_test", "--", "--evidence-log=.test-report/jobs/squatter-wine-e2e.log", "--job-summary=.test-report/jobs/squatter-wine-e2e.json"], root),
+            (["run", "//docs/tools/demo:materialize_squatter_wine_demo_outputs"], root),
+        ])
+        return run_steps(ctx, steps)
+    fail("unknown CI operation: " + mode)
+
+hovel_ci = task(
+    args = {"mode": args.positional(minimum = 1, maximum = 1, description = "setup, summary, cleanup, or wine")},
+    summary = "Configure GitHub build integration, summarize invocations, or run Wine checks.",
+    implementation = _impl,
+)
