@@ -142,10 +142,14 @@ def cppcheck_test(name, srcs, include_dirs = ["src/include"], size = None, tags 
         srcs = ["//modules/picblobs/tools:run_cppcheck_test.py"],
         main = "run_cppcheck_test.py",
         args = (
-            ["--include-dir=" + include_dir for include_dir in include_dirs] +
+            ["--include-dir=modules/picblobs/" + include_dir for include_dir in include_dirs] +
+            ["--include-dir=modules/picblobs/tests/runners/linux"] +
             ["$(rootpath {})".format(src) for src in srcs]
         ),
-        data = srcs,
+        data = srcs + [
+            "//modules/picblobs/src/include/picblobs:quality_sources",
+            "//modules/picblobs/tests/runners/linux:quality_sources",
+        ],
         python_version = "PY3",
         tags = tags,
         deps = [requirement("cppcheck")],

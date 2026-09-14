@@ -51,3 +51,21 @@ py_test(
     python_version = "PY3",
     deps = [":environment"],
 )
+
+# BEGIN generated lint sources
+filegroup(
+    name = "hovel_lint_sources",
+    srcs = [
+        "BUILD.bazel",
+        "environment.py",
+        "image.Dockerfile",
+        "image.txt",
+        "image_tool.py",
+        "image_tool_test.py",
+        "packages.lock.json",
+        "wine_run.py",
+        "wine_run_test.py",
+    ],
+    visibility = ["//tools/lint:__pkg__"],
+)
+# END generated lint sources

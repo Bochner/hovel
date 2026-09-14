@@ -111,3 +111,21 @@ go_test(
     tags = ["manual"],
     deps = ["//internal/domain/run"],
 )
+
+# BEGIN generated lint sources
+filegroup(
+    name = "hovel_lint_sources",
+    srcs = [
+        "BUILD.bazel",
+        "credential_provider_test.go",
+        "process_lifecycle_test.go",
+        "resource_limits_test.go",
+        "runner.go",
+        "runner_test.go",
+        "session_history.go",
+        "session_history_test.go",
+        "step_runtime.go",
+    ],
+    visibility = ["//tools/lint:__pkg__"],
+)
+# END generated lint sources

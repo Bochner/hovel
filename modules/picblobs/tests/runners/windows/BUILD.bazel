@@ -69,3 +69,17 @@ cppcheck_test(
     srcs = ["runner.c"],
     include_dirs = ["src/include"],
 )
+
+# BEGIN generated lint sources
+filegroup(
+    name = "hovel_lint_sources",
+    srcs = [
+        "BUILD.bazel",
+        "runner.c",
+        "start/aarch64.h",
+        "start/i386.h",
+        "start/x86_64.h",
+    ],
+    visibility = ["//tools/lint:__pkg__"],
+)
+# END generated lint sources

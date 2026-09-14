@@ -153,3 +153,18 @@ py_test(
     main = "upver_test.py",
     python_version = "PY3",
 )
+
+# BEGIN generated lint sources
+filegroup(
+    name = "hovel_lint_sources",
+    srcs = [
+        "BUILD.bazel",
+        "build_hovel_wheel.py",
+        "materialize_wheels.py",
+        "upver.py",
+        "upver_test.py",
+        "wheel.bzl",
+    ],
+    visibility = ["//tools/lint:__pkg__"],
+)
+# END generated lint sources

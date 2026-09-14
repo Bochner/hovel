@@ -2,6 +2,21 @@ load("@lint_pypi//:requirements.bzl", "requirement")
 load("@rules_python//python:defs.bzl", "py_binary", "py_test")
 
 py_binary(
+    name = "lint_sources",
+    srcs = ["lint_sources.py"],
+)
+
+py_test(
+    name = "lint_sources_test",
+    srcs = [
+        "lint_sources.py",
+        "lint_sources_test.py",
+    ],
+    imports = ["."],
+    main = "lint_sources_test.py",
+)
+
+py_binary(
     name = "ci_audit",
     srcs = ["ci_audit.py"],
 )
@@ -82,3 +97,24 @@ alias(
         "//conditions:default": "@actionlint_linux_amd64//:actionlint",
     }),
 )
+
+# BEGIN generated lint sources
+filegroup(
+    name = "hovel_lint_sources",
+    srcs = [
+        "BUILD.bazel",
+        "actionlint_test.py",
+        "checkout.py",
+        "checkout_test.py",
+        "ci_audit.py",
+        "ci_integration_test.py",
+        "ci_summary.py",
+        "ci_timing.py",
+        "configure_bazel_cache.py",
+        "github_workflows_test.py",
+        "lint_sources.py",
+        "lint_sources_test.py",
+    ],
+    visibility = ["//tools/lint:__pkg__"],
+)
+# END generated lint sources
