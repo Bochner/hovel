@@ -115,6 +115,7 @@ def main() -> int:
     if args.operation in ["build", "publish"]:
         build(root, cache, lock, tag)
     subprocess.run(["docker", "run", "--rm", "--network=none", "--entrypoint=wine", tag, "--version"], check=True)
+    subprocess.run(["docker", "run", "--rm", "--network=none", "--entrypoint=/bin/test", tag, "-x", "/usr/local/bin/squatter-wine-entrypoint"], check=True)
     if args.operation == "publish":
         token = os.environ["GITHUB_TOKEN"]
         # A short-lived Docker config prevents credentials persisting in caches.
