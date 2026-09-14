@@ -102,6 +102,7 @@ py_test(
     data = [
         ":hello_linux_x86_64_fixture",
         ":package_dir",
+        "//:.aspect/check.axl",
         "//:root_metadata",
         "//core/tools/lint:clang_format",
         "//modules/picblobs:quality_sources",

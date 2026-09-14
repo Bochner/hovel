@@ -8,6 +8,7 @@ nogo(
 )
 
 exports_files([
+    ".aspect/check.axl",
     ".clang-format",
     ".github/actions/setup-hovel/action.yml",
     ".github/workflows/ci.yml",

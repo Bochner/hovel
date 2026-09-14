@@ -172,9 +172,15 @@ load(":config.bzl", "bootlin_config")
 
 package(default_visibility = ["//visibility:public"])
 
+# Compiler and binutils RUNPATHs resolve these bundled host libraries.
+filegroup(
+    name = "runtime_libs",
+    srcs = glob(["lib/*.so*"]),
+)
+
 filegroup(
     name = "all_files",
-    srcs = glob([
+    srcs = [":runtime_libs"] + glob([
         "bin/{triple}-*",
         "bin/toolchain-wrapper",
         "lib/gcc/{triple}/**",
@@ -188,7 +194,7 @@ filegroup(
 
 filegroup(
     name = "compiler_files",
-    srcs = glob([
+    srcs = [":runtime_libs"] + glob([
         "bin/{triple}-*",
         "bin/toolchain-wrapper",
         "lib/gcc/{triple}/**",
@@ -203,7 +209,7 @@ filegroup(
 
 filegroup(
     name = "linker_files",
-    srcs = glob([
+    srcs = [":runtime_libs"] + glob([
         "bin/{triple}-*",
         "bin/toolchain-wrapper",
         "lib/gcc/{triple}/**",
@@ -232,7 +238,7 @@ filegroup(
 
 filegroup(
     name = "dwp_files",
-    srcs = glob(["bin/{triple}-gcc.br_real"]),
+    srcs = [":runtime_libs"] + glob(["bin/{triple}-gcc.br_real"]),
 )
 
 filegroup(

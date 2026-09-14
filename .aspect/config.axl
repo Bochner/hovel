@@ -1,3 +1,5 @@
+load("@aspect//bazel.axl", "BazelTrait")
+
 def _selected_bazel_flags(ctx: ConfigContext) -> list[str]:
     explicit = ctx.std.env.var("HOVEL_BAZEL_ARGS")
     if explicit:
@@ -10,7 +12,7 @@ def _selected_bazel_flags(ctx: ConfigContext) -> list[str]:
     if not ctx.std.fs.exists(selection):
         return []
 
-    mode = ctx.std.fs.open(selection).read().strip()
+    mode = ctx.std.fs.read_to_string(selection).strip()
     configs = {
         "": [],
         "local": ["--config=local-cache"],
@@ -23,13 +25,22 @@ def _selected_bazel_flags(ctx: ConfigContext) -> list[str]:
     return configs[mode]
 
 def config(ctx: ConfigContext):
+    # Bazel requires sandbox_writable_path to exist before any action starts.
+    ctx.std.fs.create_dir_all("/tmp/hovel-zig-cache")
+
+    # The root workspace also contains a separate core workspace. Recursive
+    # discovery would load core's packages with root-relative labels.
+    ctx.tasks["build"].args.targets = ["@hovel_core//:build"]
+    ctx.tasks["test"].args.targets = ["@hovel_core//:test"]
+
     flags = _selected_bazel_flags(ctx)
     startup = ctx.std.env.var("HOVEL_BAZEL_STARTUP_ARGS")
     startup_flags = startup.split() if startup else []
 
-    for task_name in ["build", "run", "test"]:
-        ctx.tasks[task_name].args.bazel_flags = flags
-        ctx.tasks[task_name].args.bazel_startup_flags = startup_flags
+    # Preserve the selected backend when a workflow adds --bazel-flag
+    # (for example coverage or Picblobs flags). CLI flags remain overrides.
+    ctx.traits[BazelTrait].flags = lambda command_flags: flags + command_flags
+    ctx.traits[BazelTrait].extra_startup_flags = startup_flags
 
     for task_name in ["build", "test"]:
         ctx.tasks[task_name].args.repro_flavors = ["aspect"]

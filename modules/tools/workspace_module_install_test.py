@@ -52,6 +52,7 @@ def main() -> int:
         empty_config = tmp / "empty-modules.json"
         empty_config.write_text('{"modules":[]}\n')
         env = os.environ | {
+            "PATH": str(Path(os.sys.executable).resolve().parent) + os.pathsep + os.environ.get("PATH", ""),
             "HOVEL_MODULE_CONFIG": str(empty_config),
             "HOVEL_PYTHON_SDK_ROOT": str(sdk_root),
         }
@@ -133,8 +134,9 @@ launch:
 
 
 def run(argv: list[str], env: dict[str, str]) -> str:
-    result = subprocess.run(argv, check=True, env=env, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    result = subprocess.run(argv, check=False, env=env, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     print(result.stdout, end="")
+    result.check_returncode()
     return result.stdout
 
 

@@ -59,7 +59,8 @@ def parse_args() -> argparse.Namespace:
 def materialize_project(destination: Path, sources: list[str]) -> None:
     for source_value in sources:
         source = resolve_runfile(source_value)
-        relative = project_relative_path(source)
+        # Use the logical path: remote runfiles repeat the package in their root.
+        relative = project_relative_path(Path(source_value))
         output = destination / relative
         output.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(source, output)

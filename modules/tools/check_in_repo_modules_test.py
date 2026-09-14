@@ -80,6 +80,7 @@ def main() -> int:
         )
 
         env = os.environ | {
+            "PATH": str(Path(os.sys.executable).resolve().parent) + os.pathsep + os.environ.get("PATH", ""),
             "HOVEL_MODULE_CONFIG": str(config),
             "HOVEL_PYTHON_SDK_ROOT": str(sdk_root),
         }
