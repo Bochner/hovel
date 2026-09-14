@@ -11,6 +11,10 @@ on:
         description: Publish the locked Wine image using the trusted manual workflow
         type: boolean
         default: false
+      reproducibility:
+        description: Run independent release rebuilds instead of the normal CI gate
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -24,6 +28,12 @@ defaults:
     shell: bash
 
 jobs:
+  reproducibility:
+    if: github.event_name == 'workflow_dispatch' && inputs.reproducibility
+    uses: ./.github/workflows/reproducibility.yml
+    with:
+      ref: ${{ github.sha }}
+    secrets: inherit
   wine-image:
     if: github.event_name == 'workflow_dispatch' && inputs.publish-wine-image
     uses: ./.github/workflows/wine-image.yml
@@ -33,6 +43,7 @@ jobs:
     secrets: inherit
 
   check:
+    if: github.event_name != 'workflow_dispatch' || (!inputs.publish-wine-image && !inputs.reproducibility)
     name: ${{ matrix.name }}
     runs-on: ubuntu-24.04
     timeout-minutes: 120
@@ -106,6 +117,7 @@ jobs:
           job-status: ${{ job.status }}
 
   docs:
+    if: github.event_name != 'workflow_dispatch' || (!inputs.publish-wine-image && !inputs.reproducibility)
     name: Docs, test report, and Pages artifact
     runs-on: ubuntu-24.04
     timeout-minutes: 120
@@ -132,6 +144,7 @@ jobs:
           job-status: ${{ job.status }}
 
   squatter-wine:
+    if: github.event_name != 'workflow_dispatch' || (!inputs.publish-wine-image && !inputs.reproducibility)
     name: Squatter Wine tests and demo
     runs-on: ubuntu-24.04
     timeout-minutes: 60
