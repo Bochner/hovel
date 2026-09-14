@@ -3,6 +3,28 @@ load("@rules_python//python:defs.bzl", "py_binary", "py_test")
 package(default_visibility = ["//visibility:public"])
 
 py_binary(
+    name = "image_tool",
+    srcs = ["image_tool.py"],
+    data = [
+        "image.Dockerfile",
+        "packages.lock.json",
+        "//modules/docker/squatter-wine:entrypoint.sh",
+    ],
+)
+
+py_test(
+    name = "image_tool_test",
+    srcs = [
+        "image_tool.py",
+        "image_tool_test.py",
+    ],
+    args = ["$(rootpath :packages.lock.json)"],
+    data = ["packages.lock.json"],
+    imports = ["."],
+    main = "image_tool_test.py",
+)
+
+py_binary(
     name = "wine_run",
     srcs = ["wine_run.py"],
     main = "wine_run.py",

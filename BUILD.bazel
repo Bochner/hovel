@@ -8,6 +8,7 @@ nogo(
 )
 
 exports_files([
+    ".github/workflows/wine-image.yml",
     ".aspect/check.axl",
     ".aspect/ci.axl",
     ".aspect/metadata.axl",
@@ -56,6 +57,7 @@ test_suite(
         "//repo-tools/tasks:github_workflows_test",
         "//tools/bazel/buildifier:buildifier_test",
         "//tools/bazel/policy:repo_policy_test",
+        "//tools/wine:image_tool_test",
     ],
 )
 

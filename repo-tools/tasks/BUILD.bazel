@@ -63,12 +63,14 @@ py_test(
         "$(rootpath //:.github/workflows/ci.yml)",
         "$(rootpath //:.github/workflows/pages.yml)",
         "$(rootpath //:.github/workflows/release.yml)",
+        "$(rootpath //:.github/workflows/wine-image.yml)",
     ],
     data = [
         ":actionlint",
         "//:.github/workflows/ci.yml",
         "//:.github/workflows/pages.yml",
         "//:.github/workflows/release.yml",
+        "//:.github/workflows/wine-image.yml",
     ],
     target_compatible_with = ["@platforms//os:linux"],
 )
