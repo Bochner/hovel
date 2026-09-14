@@ -40,6 +40,7 @@ def configure(env: dict[str, str]) -> dict[str, str]:
         "HOVEL_BAZEL_STARTUP_ARGS": "--bazelrc=" + str(path),
         "HOVEL_BAZEL_ARGS": " ".join(configs),
         "HOVEL_BEP_DIR": str(bep_dir),
+        "HOVEL_TIMING_DIR": str(path.parent / "hovel-timing"),
         "HOVEL_BUILDBUDDY_MODE": "remote-execution" if key else "local (no credential)",
         "HOVEL_BUILDBUDDY_URL": "https://vibepwners.buildbuddy.io",
     }

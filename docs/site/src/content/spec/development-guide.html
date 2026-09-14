@@ -73,6 +73,16 @@
     Credentials never belong in tracked rc files or command-line arguments.
   </p>
   <p>
+    CI dependency caches are isolated by check scope and release family, with
+    toolchain definitions included in their keys. Job summaries show complete
+    Aspect task times, including host executables; nested task times overlap.
+    To inspect a completed run, use
+    <code>aspect run //repo-tools/tasks:ci_audit -- --run-id=RUN_ID --credential-file=/path/to/private/buildbuddy.bazelrc --output=/path/to/audit.json</code>.
+    The audit uses GitHub authentication from the environment or GitHub CLI and
+    records only selected timings and cache counters. Logical and transferred
+    bytes include repeated worker reads, not just downloads to the CI runner.
+  </p>
+  <p>
     Aspect adds invocation metadata following the
     <a href="https://www.buildbuddy.io/docs/guide-metadata/">BuildBuddy metadata guide</a>:
     repository, checked-out commit, branch, and worktree state. GitHub runs also carry

@@ -4,13 +4,24 @@ import json
 import stat
 import tempfile
 import unittest
+import urllib.request
 from pathlib import Path
 
 from ci_summary import render
+from ci_timing import label
+from ci_audit import SafeRedirect
 from configure_bazel_cache import configure, rc_path
 
 
 class CIIntegrationTest(unittest.TestCase):
+    def test_audit_does_not_forward_credentials_to_signed_log_downloads(self) -> None:
+        request = urllib.request.Request("https://api.github.com/logs", headers={"Authorization": "Bearer secret"})
+        redirected = SafeRedirect().redirect_request(request, None, 302, "", {}, "https://storage.example/log?signature=test")
+        self.assertFalse(redirected.has_header("Authorization"))
+
+    def test_task_labels_do_not_capture_credentials_or_runtime_arguments(self) -> None:
+        self.assertEqual(label(["run", "--bazel-flag=--remote_header=SECRET", "//tool:run", "--", "SECRET"]), "run //tool:run")
+
     def setUp(self) -> None:
         self.directory = tempfile.TemporaryDirectory()
         self.addCleanup(self.directory.cleanup)
