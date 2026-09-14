@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 from pathlib import Path
 import sys
@@ -15,6 +16,15 @@ LOCK = json.loads(Path(sys.argv.pop()).read_text())
 
 
 class ImageLockTest(unittest.TestCase):
+    def test_download_retries_transport_failure_then_checks_hash(self):
+        package = dict(LOCK["packages"][0], sha256=hashlib.sha256(b"valid").hexdigest())
+        with tempfile.TemporaryDirectory() as directory, mock.patch("urllib.request.urlopen") as response, mock.patch("time.sleep"):
+            stream = mock.MagicMock()
+            stream.__enter__.return_value.read.return_value = b"valid"
+            response.side_effect = [ConnectionResetError(), stream]
+            self.assertEqual(download(package, Path(directory)).read_bytes(), b"valid")
+            self.assertEqual(response.call_count, 2)
+
     def test_complete_lock_is_pinned(self):
         validate_lock(LOCK)
         self.assertGreater(len(LOCK["packages"]), 1)

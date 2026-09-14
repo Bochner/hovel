@@ -11,7 +11,10 @@ import re
 import shutil
 import subprocess
 import tempfile
+import time
+import urllib.error
 import urllib.request
+from tools.wine.environment import image_ref
 
 BASE = "ubuntu:24.04@sha256:4fbb8e6a8395de5a7550b33509421a2bafbc0aab6c06ba2cef9ebffbc7092d90"
 IMAGE = "ghcr.io/vibepwners/hovel-ci-wine"
@@ -33,8 +36,15 @@ def download(package: dict, cache: Path) -> Path:
     destination = cache / (expected or hashlib.sha256(package["url"].encode()).hexdigest())
     if destination.exists() and (not expected or hashlib.sha256(destination.read_bytes()).hexdigest() == expected):
         return destination
-    with urllib.request.urlopen(package["url"], timeout=180) as response:
-        data = response.read()
+    for attempt in range(4):
+        try:
+            with urllib.request.urlopen(package["url"], timeout=180) as response:
+                data = response.read()
+            break
+        except (urllib.error.URLError, TimeoutError, ConnectionError):
+            if attempt == 3:
+                raise
+            time.sleep(2 ** attempt)
     digest = hashlib.sha256(data).hexdigest()
     if expected and expected != digest:
         raise ValueError("package checksum mismatch: " + package["filename"])
@@ -98,9 +108,16 @@ def build(root: Path, cache: Path, lock: dict, tag: str) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("operation", choices=["lock", "build", "publish", "verify"])
+    parser.add_argument("operation", choices=["lock", "build", "publish", "verify", "prepare"])
     args = parser.parse_args()
     root = Path(os.environ["BUILD_WORKSPACE_DIRECTORY"])
+    if args.operation == "prepare":
+        image = image_ref()
+        exists = subprocess.run(["docker", "image", "inspect", image], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0
+        if not exists:
+            subprocess.run(["docker", "pull", image], check=True)
+        print("Pinned Wine runtime:", image)
+        return 0
     cache = Path(os.environ.get("HOVEL_IMAGE_CACHE", str(Path.home() / ".cache/hovel-wine-packages")))
     cache.mkdir(parents=True, exist_ok=True)
     path = root / "tools/wine/packages.lock.json"
