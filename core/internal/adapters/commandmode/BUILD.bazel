@@ -95,8 +95,9 @@ go_test(
         "commandmode_test_helpers_test.go",
         "module_install_progress_test.go",
     ],
-    data = [],
+    data = ["//tools/tests:python_interpreter"],  # keep
     embed = [":commandmode"],
+    env = {"HOVEL_TEST_PYTHON": "$(rootpath //tools/tests:python_interpreter)"},
     tags = [
         "manual",
         "unit",
@@ -120,8 +121,9 @@ go_test(
         "commandmode_e2e_test.go",
         "commandmode_test_helpers_test.go",
     ],
-    data = [],
+    data = ["//tools/tests:python_interpreter"],  # keep
     embed = [":commandmode"],
+    env = {"HOVEL_TEST_PYTHON": "$(rootpath //tools/tests:python_interpreter)"},
     tags = [
         "e2e",
         "manual",

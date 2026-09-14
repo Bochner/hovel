@@ -1,6 +1,9 @@
 load("@rules_python//python:defs.bzl", "py_binary")
+load(":python_runtime.bzl", "python_test_interpreter")
 
 package(default_visibility = ["//visibility:public"])
+
+python_test_interpreter(name = "python_interpreter")
 
 py_binary(
     name = "check_coverage",

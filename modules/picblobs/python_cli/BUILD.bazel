@@ -102,6 +102,7 @@ py_test(
     data = [
         ":source_package_files",
         "//modules/picblobs:root_metadata",
+        "//modules/picblobs/python:pyproject.toml",
         "//modules/picblobs/python:source_package_files",
         "//modules/picblobs/tools:python_tools",
         _QEMU_AARCH64_STATIC,

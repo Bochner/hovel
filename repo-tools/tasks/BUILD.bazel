@@ -20,15 +20,56 @@ py_test(
     srcs = ["github_workflows_test.py"],
     args = [
         "$(rootpath //:.github/actions/setup-hovel/action.yml)",
+        "$(rootpath //:.github/actions/finish-hovel/action.yml)",
         "$(rootpath //:.github/workflows/ci.yml)",
         "$(rootpath //:.github/workflows/pages.yml)",
         "$(rootpath //:.github/workflows/release.yml)",
     ],
     data = [
+        "//:.github/actions/finish-hovel/action.yml",
         "//:.github/actions/setup-hovel/action.yml",
         "//:.github/workflows/ci.yml",
         "//:.github/workflows/pages.yml",
         "//:.github/workflows/release.yml",
     ],
     python_version = "PY3",
+)
+
+py_test(
+    name = "ci_integration_test",
+    size = "small",
+    srcs = [
+        "ci_integration_test.py",
+        "ci_summary.py",
+        "configure_bazel_cache.py",
+    ],
+    imports = ["."],
+    main = "ci_integration_test.py",
+)
+
+py_test(
+    name = "actionlint_test",
+    size = "small",
+    srcs = ["actionlint_test.py"],
+    args = [
+        "$(rootpath :actionlint)",
+        "$(rootpath //:.github/workflows/ci.yml)",
+        "$(rootpath //:.github/workflows/pages.yml)",
+        "$(rootpath //:.github/workflows/release.yml)",
+    ],
+    data = [
+        ":actionlint",
+        "//:.github/workflows/ci.yml",
+        "//:.github/workflows/pages.yml",
+        "//:.github/workflows/release.yml",
+    ],
+    target_compatible_with = ["@platforms//os:linux"],
+)
+
+alias(
+    name = "actionlint",
+    actual = select({
+        "@platforms//cpu:aarch64": "@actionlint_linux_arm64//:actionlint",
+        "//conditions:default": "@actionlint_linux_amd64//:actionlint",
+    }),
 )

@@ -97,7 +97,7 @@ filegroup(
     srcs = [
         ":clang_tidy_bin",
         ":clang_tidy_runtime",
-    ],
+    ] + glob(["lib/clang/*/include/**"]),
 )
 
 filegroup(

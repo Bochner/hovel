@@ -190,7 +190,7 @@ def run_go_coverage_layers() -> list[CoverageResult]:
     report = ROOT / "bazel-out/_coverage/_coverage_report.dat"
     report.unlink(missing_ok=True)
     targets = tuple(target for _, _, layer_targets, _ in GO_LAYERS for target in layer_targets)
-    run(["aspect", "test", "--bazel-flag=--collect_code_coverage", "--bazel-flag=--combined_report=lcov", *targets])
+    run(["aspect", "test", "--bazel-flag=--collect_code_coverage", "--bazel-flag=--combined_report=lcov", "--bazel-flag=--remote_download_outputs=all", *targets])
     return analyze_go_coverage_layers()
 
 

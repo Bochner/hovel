@@ -218,7 +218,8 @@ def runfile_roots() -> list[Path]:
 
 
 def test_tmpdir() -> str | None:
-    return "/tmp"
+    # TEST_TMPDIR can exceed the Unix socket path limit; honor TMPDIR instead.
+    return tempfile.gettempdir()
 
 
 if __name__ == "__main__":

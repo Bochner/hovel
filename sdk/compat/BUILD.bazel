@@ -8,6 +8,7 @@ py_test(
     data = [
         "public_api_baseline.json",
         "public_api_contract_digests.json",
+        "//:MODULE.bazel",
         "//sdk/go/hovel:sources",
         "//sdk/python:sources",
         "//sdk/rust/hovel:sources",

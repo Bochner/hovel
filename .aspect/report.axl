@@ -6,7 +6,7 @@ def _impl(ctx: TaskContext) -> int:
     return run_steps(ctx, [
         (["run", "//tools/testreport:run_lint_report", "--", "--output=.test-report/linters"], root),
         (["run", "//tools/coverage:python_sdk_coverage", "--", "--no-enforce"], root),
-        (["test", "--bazel-flag=--test_strategy=standalone", "--bazel-flag=--nocache_test_results", "//:sdk_test", "//:module_examples_test", "//:modules_test", "//:docs_test"], root),
+        (["test", "--bazel-flag=--remote_download_outputs=all", "--bazel-flag=--nocache_test_results", "//:sdk_test", "//:module_examples_test", "//:modules_test", "//:docs_test"], root),
         (["run", "//tools/coverage:go_branch_inventory", "--", "--hits-root=bazel-testlogs", "--no-enforce"], root),
         (["run", "//tools/coverage:rust_sdk_coverage", "--", "--no-enforce"], root),
         (["run", "//cmd/hovel-operator-parity", "--", "--output=../coverage/operator-parity.results.json"], core),

@@ -8,8 +8,12 @@ nogo(
 )
 
 exports_files([
+    ".aspect/check.axl",
+    ".aspect/ci.axl",
+    ".aspect/metadata.axl",
     ".clang-format",
     ".github/actions/setup-hovel/action.yml",
+    ".github/actions/finish-hovel/action.yml",
     ".github/workflows/ci.yml",
     ".github/workflows/pages.yml",
     ".github/workflows/release.yml",
@@ -46,7 +50,9 @@ test_suite(
     tests = [
         "//repo-tools/deps:update_python_locks_test",
         "//repo-tools/release:release_tool_test",
+        "//repo-tools/tasks:actionlint_test",
         "//repo-tools/tasks:checkout_test",
+        "//repo-tools/tasks:ci_integration_test",
         "//repo-tools/tasks:github_workflows_test",
         "//tools/bazel/buildifier:buildifier_test",
         "//tools/bazel/policy:repo_policy_test",

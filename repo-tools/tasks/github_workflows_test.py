@@ -2,10 +2,13 @@ from __future__ import annotations
 
 import re
 import sys
+import unittest
 from pathlib import Path
 
 
-FILES = {Path(argument).name: Path(argument).read_text(encoding="utf-8") for argument in sys.argv[1:]}
+FILES = {Path(argument).as_posix(): Path(argument).read_text(encoding="utf-8") for argument in sys.argv[1:]}
+FILES = {(path if path.endswith("action.yml") else Path(path).name): content for path, content in FILES.items()}
+sys.argv[1:] = []
 
 
 def test_every_remote_action_is_pinned_by_commit() -> None:
@@ -57,3 +60,45 @@ def test_repository_workflows_share_one_setup_action() -> None:
         assert "./.github/actions/setup-hovel" in FILES[filename]
         assert "aspect-build/setup-aspect@" not in FILES[filename]
         assert "actions/cache@" not in FILES[filename]
+
+
+def test_ci_has_complete_scopes_and_bounded_jobs() -> None:
+    workflow = FILES["ci.yml"]
+    for scope in ("repo", "core", "sdk", "module-examples", "modules", "agent"):
+        assert f"- scope: {scope}\n" in workflow
+    assert "aspect hovel-report" in workflow
+    assert "aspect hovel-ci wine" in workflow
+    assert "fail-fast: false" in workflow
+    assert "id-token: write" not in workflow
+    assert "pull_request_target" not in workflow
+    assert "merge_group:" in workflow
+    assert workflow.count("timeout-minutes:") == workflow.count("runs-on:")
+
+
+def test_every_build_job_configures_and_cleans_up_buildbuddy() -> None:
+    for filename in ("ci.yml", "release.yml"):
+        workflow = FILES[filename]
+        setups = workflow.count("uses: ./.github/actions/setup-hovel")
+        assert setups == workflow.count("buildbuddy-api-key: ${{ secrets.BUILDBUDDY_API_KEY }}")
+        assert setups == workflow.count("uses: ./.github/actions/finish-hovel")
+        assert "persist-credentials: false" in workflow
+
+
+def test_pages_promotes_only_trusted_successful_ci_artifacts() -> None:
+    workflow = FILES["pages.yml"]
+    assert "github.event.workflow_run.event == 'push'" in workflow
+    assert "github.event.workflow_run.head_repository.full_name == github.repository" in workflow
+    assert "run-id: ${{ github.event.workflow_run.id }}" in workflow
+    assert "name: docs-site" in workflow
+
+
+def test_setup_does_not_mix_disk_action_cache_with_remote_execution() -> None:
+    setup = next(content for name, content in FILES.items() if name.endswith("setup-hovel/action.yml"))
+    assert 'disk-cache: "false"' in setup
+    assert 'repository-cache: "false"' in setup
+    assert 'launcher-version: "2026.33.3"' in setup
+
+
+if __name__ == "__main__":
+    suite = unittest.TestSuite(unittest.FunctionTestCase(test) for name, test in list(globals().items()) if name.startswith("test_"))
+    raise SystemExit(not unittest.TextTestRunner(verbosity=2).run(suite).wasSuccessful())

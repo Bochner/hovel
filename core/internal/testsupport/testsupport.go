@@ -22,6 +22,22 @@ import (
 
 const ExampleModuleConfig = "modules/examples/python/hovel-modules.json"
 
+// ConfigurePython exposes the declared test runtime to Python module fixtures.
+func ConfigurePython() error {
+	interpreter := os.Getenv("HOVEL_TEST_PYTHON")
+	if interpreter == "" {
+		return nil
+	}
+	interpreter, err := filepath.Abs(ResolveRunfile(interpreter))
+	if err != nil {
+		return fmt.Errorf("resolve test Python interpreter: %w", err)
+	}
+	if _, err := os.Stat(interpreter); err != nil {
+		return fmt.Errorf("locate test Python interpreter: %w", err)
+	}
+	return os.Setenv("PATH", filepath.Dir(interpreter)+string(os.PathListSeparator)+os.Getenv("PATH"))
+}
+
 func UseExampleModuleConfig(t testing.TB) {
 	t.Helper()
 	t.Setenv("HOVEL_MODULE_CONFIG", ResolveRunfile(ExampleModuleConfig))

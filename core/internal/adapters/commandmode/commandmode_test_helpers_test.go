@@ -13,6 +13,9 @@ import (
 )
 
 func TestMain(m *testing.M) {
+	if err := testsupport.ConfigurePython(); err != nil {
+		panic(err)
+	}
 	moduleConfigDir, err := os.MkdirTemp("", "hovel-commandmode-test-*")
 	if err != nil {
 		panic(err)

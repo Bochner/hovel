@@ -1,7 +1,11 @@
 name: Set up Hovel build
-description: Install Aspect CLI and configure the shared hermetic Bazel cache.
+description: Install Aspect CLI and configure BuildBuddy remote execution and invocation evidence.
 
 inputs:
+  buildbuddy-api-key:
+    description: BuildBuddy credential; empty for fork PRs and local-only builds.
+    required: false
+    default: ""
   configure-cache:
     description: Run the repository cache selector after installing Aspect.
     required: false
@@ -15,13 +19,20 @@ runs:
         path: |
           ~/.cache/bazelisk
           ~/.cache/bazel-repository
-        key: bazel-repository-${{ runner.os }}-${{ hashFiles('MODULE.bazel.lock', 'MODULE.bazel', '.bazelversion', 'core/MODULE.bazel.lock', 'core/.bazelversion') }}
-        restore-keys: bazel-repository-${{ runner.os }}-
+        key: bazel-repository-v2-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('MODULE.bazel.lock', 'MODULE.bazel', '.bazelversion', 'core/MODULE.bazel', 'core/MODULE.bazel.lock', 'core/.bazelversion') }}
+        restore-keys: bazel-repository-v2-${{ runner.os }}-${{ runner.arch }}-
 
     - name: Set up Aspect CLI
       uses: aspect-build/setup-aspect@2306377a61c45954ab2df7c7311698b109364352 # v2026.26.9
+      with:
+        launcher-version: "2026.33.3"
+        # BuildBuddy owns action caching; the step above owns repository caching.
+        disk-cache: "false"
+        repository-cache: "false"
 
-    - name: Configure Bazel cache
+    - name: Configure BuildBuddy and invocation capture
       if: inputs.configure-cache == 'true'
       shell: bash
-      run: python3 repo-tools/tasks/configure_bazel_cache.py
+      env:
+        BUILDBUDDY_API_KEY: ${{ inputs.buildbuddy-api-key }}
+      run: aspect hovel-ci setup

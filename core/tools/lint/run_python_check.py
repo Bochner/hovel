@@ -5,6 +5,7 @@ import argparse
 import os
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 
@@ -20,7 +21,7 @@ def main() -> int:
     project = Path("sdk/python")
     package = project / "hovel_sdk"
     examples = Path("modules/examples/python")
-    cache = Path(os.environ.get("TEST_TMPDIR", "/tmp")) / "python-check"
+    cache = Path(os.environ.get("TEST_TMPDIR") or tempfile.gettempdir()) / "python-check"
     env = os.environ | {
         "HOVEL_REPO_ROOT": str(root),
         "RUFF_CACHE_DIR": str(cache / "ruff"),

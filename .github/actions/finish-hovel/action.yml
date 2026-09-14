@@ -1,0 +1,18 @@
+name: Finish Hovel build
+description: Link BuildBuddy invocations and remove the runner credential file.
+inputs:
+  job-status:
+    description: Final job status before reporting.
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: BuildBuddy invocation summary
+      shell: bash
+      env:
+        JOB_STATUS: ${{ inputs.job-status }}
+      run: aspect hovel-ci summary
+    - name: Remove BuildBuddy credential file
+      if: always()
+      shell: bash
+      run: aspect hovel-ci cleanup

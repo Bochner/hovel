@@ -87,9 +87,9 @@ go_test(
         "prompt_writer_test.go",
         "terminal_state_test.go",
     ],
-    data = [
-    ],
+    data = ["//tools/tests:python_interpreter"],  # keep
     embed = [":cli"],
+    env = {"HOVEL_TEST_PYTHON": "$(rootpath //tools/tests:python_interpreter)"},
     tags = [
         "manual",
         "unit",
@@ -115,9 +115,9 @@ go_test(
         "cli_e2e_test.go",
         "cli_test_helpers_test.go",
     ],
-    data = [
-    ],
+    data = ["//tools/tests:python_interpreter"],  # keep
     embed = [":cli"],
+    env = {"HOVEL_TEST_PYTHON": "$(rootpath //tools/tests:python_interpreter)"},
     tags = [
         "e2e",
         "manual",
