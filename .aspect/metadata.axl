@@ -13,7 +13,9 @@ def metadata_flags(ctx):
         "BRANCH_NAME": branch,
         "TAG_PROJECT": "hovel",
         "TAG_WORKTREE": "dirty" if _git(ctx, ["status", "--porcelain", "--untracked-files=normal"]) else "clean",
-        "TAG_STEP": env.var("HOVEL_BUILD_STEP") or "",
+        # BuildBuddy limits the combined indexed tag list to 255 bytes. Keep
+        # unbounded command and GitHub values as ordinary invocation metadata.
+        "HOVEL_STEP": env.var("HOVEL_BUILD_STEP") or "",
     }
     if env.var("GITHUB_ACTIONS"):
         repo = (env.var("GITHUB_SERVER_URL") or "https://github.com") + "/" + (env.var("GITHUB_REPOSITORY") or "vibepwners/hovel")
@@ -24,11 +26,12 @@ def metadata_flags(ctx):
             "REPO_URL": repo + ".git",
             "ROLE": "CI",
             "USER": env.var("GITHUB_ACTOR") or "",
-            "TAG_WORKFLOW": env.var("GITHUB_WORKFLOW") or "",
-            "TAG_JOB": job,
-            "TAG_RUN": run_id,
-            "TAG_ATTEMPT": attempt,
-            "TAG_EVENT": env.var("GITHUB_EVENT_NAME") or "",
+            "GITHUB_WORKFLOW": env.var("GITHUB_WORKFLOW") or "",
+            "HOVEL_JOB": job,
+            "TAG_JOB": job[:32],
+            "GITHUB_RUN_ID": run_id,
+            "GITHUB_RUN_ATTEMPT": attempt,
+            "GITHUB_EVENT_NAME": env.var("GITHUB_EVENT_NAME") or "",
         })
         links = ["[Source](" + repo + "/commit/" + commit + ")"] if commit else []
         if run_id:
@@ -38,7 +41,7 @@ def metadata_flags(ctx):
         if ref.startswith("refs/pull/"):
             links.append("[Pull request](" + repo + "/pull/" + ref.split("/")[2] + ")")
         if release_tag or ref.startswith("refs/tags/"):
-            metadata["TAG_RELEASE"] = _git(ctx, ["describe", "--tags", "--exact-match", "HEAD"])
+            metadata["HOVEL_RELEASE"] = _git(ctx, ["describe", "--tags", "--exact-match", "HEAD"])
         elif not branch and ref.startswith("refs/heads/") and env.var("GITHUB_SHA") == commit:
             metadata["BRANCH_NAME"] = ref[len("refs/heads/"):]
         metadata["BUILDBUDDY_LINKS"] = ",".join(links)

@@ -18,7 +18,7 @@ def _impl(ctx: TaskContext) -> int:
     if mode == "wine":
         # Wine is a host service; compilation still uses the selected RBE backend.
         steps = [
-            (["test", "--bazel-flag=--test_strategy=standalone", "--bazel-flag=--platforms=//platforms:windows_" + arch, "--bazel-flag=--extra_toolchains=@mingw_" + toolchain + "//:toolchain", "--bazel-flag=--run_under=//tools/wine:wine_run", "//:modules_wine_test"], root)
+            (["test", "--bazel-flag=--strategy=TestRunner=local", "--bazel-flag=--platforms=//platforms:windows_" + arch, "--bazel-flag=--extra_toolchains=@mingw_" + toolchain + "//:toolchain", "--bazel-flag=--run_under=//tools/wine:wine_run", "//:modules_wine_test"], root)
             for arch, toolchain in [("x86", "i686"), ("x64", "x86_64")]
         ]
         steps.extend([

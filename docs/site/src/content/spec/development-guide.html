@@ -81,7 +81,9 @@
     source commit, and pull request. The commit describes the actual checkout,
     including GitHub's PR merge commit, rather than assuming that the event SHA is
     the source built by a manually selected release. These are invocation fields;
-    changing them does not stamp or invalidate compiled artifacts.
+    changing them does not stamp or invalidate compiled artifacts. Indexed tags
+    are limited to project, worktree state, and a bounded job name so long command
+    lines cannot exceed BuildBuddy's tag storage limit.
   </p>
   <p>
     Set the GitHub Actions secret <code>BUILDBUDDY_API_KEY</code> to enable remote
