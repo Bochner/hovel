@@ -148,6 +148,9 @@ jobs:
     name: Squatter Wine tests and demo
     runs-on: ubuntu-24.04
     timeout-minutes: 60
+    permissions:
+      contents: read
+      packages: read
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
@@ -156,6 +159,10 @@ jobs:
         with:
           cache-family: wine
           buildbuddy-api-key: ${{ secrets.BUILDBUDDY_API_KEY }}
+      - name: Pull private Wine runtime
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: aspect hovel-ci image-prepare
       - name: Verify Wine integration and materialize demo
         run: aspect hovel-ci wine
       - uses: ./.github/actions/finish-hovel
