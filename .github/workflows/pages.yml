@@ -32,6 +32,7 @@ jobs:
       - uses: ./.github/actions/setup-hovel
         if: github.event_name == 'workflow_dispatch'
         with:
+          cache-family: docs
           buildbuddy-api-key: ${{ secrets.BUILDBUDDY_API_KEY }}
 
       - name: Download successful CI site

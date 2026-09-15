@@ -97,6 +97,11 @@ def test_setup_does_not_mix_disk_action_cache_with_remote_execution() -> None:
     assert 'disk-cache: "false"' in setup
     assert 'repository-cache: "false"' in setup
     assert 'launcher-version: "2026.33.3"' in setup
+    assert setup.count("${{ inputs.cache-family }}") == 2
+    assert "'**/*.bzl'" in setup
+    for name in ("ci.yml", "release.yml", "pages.yml"):
+        workflow = FILES[name]
+        assert workflow.count("cache-family:") == workflow.count("buildbuddy-api-key:")
 
 
 if __name__ == "__main__":

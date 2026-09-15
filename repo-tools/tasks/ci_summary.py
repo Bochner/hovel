@@ -39,6 +39,16 @@ def render(env: dict[str, str]) -> str:
         "",
     ]
     directory = env.get("HOVEL_BEP_DIR")
+    timing_dir = env.get("HOVEL_TIMING_DIR")
+    if timing_dir:
+        lines.extend(["Task times include post-build host execution; nested tasks overlap.", "", "| Task | Seconds | Exit |", "| --- | ---: | ---: |"])
+        for path in sorted(Path(timing_dir).glob("*.json")):
+            try:
+                task = json.loads(path.read_text())
+                lines.append("| " + cell(task["task"]) + " | " + str(round(float(task["duration_seconds"]), 2)) + " | " + str(int(task["exit_code"])) + " |")
+            except (OSError, ValueError, KeyError, TypeError):
+                lines.append("| Timing unavailable | — | — |")
+        lines.append("")
     records = invocations(Path(directory)) if directory else []
     if not records:
         return "\n".join(lines + ["No Bazel invocation events were recorded.", ""])

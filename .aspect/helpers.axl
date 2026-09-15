@@ -1,6 +1,9 @@
 def run_aspect(ctx: TaskContext, args: list[str], cwd: str = "") -> int:
     root = ctx.std.env.aspect_root_dir()
     command = ctx.std.process.command("aspect").args(args)
+    if ctx.std.env.var("HOVEL_TIMING_DIR"):
+        # CI telemetry is a stdlib-only runner boundary, like credential setup.
+        command = ctx.std.process.command("python3").args([root + "/repo-tools/tasks/ci_timing.py"] + args)
     # Stable logical steps distinguish invocations within one GitHub job.
     command = command.env("HOVEL_BUILD_STEP", " ".join(args[:args.index("--")] if "--" in args else args))
     command = command.current_dir(cwd if cwd else root)

@@ -2,6 +2,10 @@ name: Set up Hovel build
 description: Install Aspect CLI and configure BuildBuddy remote execution and invocation evidence.
 
 inputs:
+  cache-family:
+    description: Dependency population owned by this scope or release family.
+    required: false
+    default: shared
   buildbuddy-api-key:
     description: BuildBuddy credential; empty for fork PRs and local-only builds.
     required: false
@@ -19,8 +23,8 @@ runs:
         path: |
           ~/.cache/bazelisk
           ~/.cache/bazel-repository
-        key: bazel-repository-v2-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('MODULE.bazel.lock', 'MODULE.bazel', '.bazelversion', 'core/MODULE.bazel', 'core/MODULE.bazel.lock', 'core/.bazelversion') }}
-        restore-keys: bazel-repository-v2-${{ runner.os }}-${{ runner.arch }}-
+        key: bazel-repository-v3-${{ runner.os }}-${{ runner.arch }}-${{ inputs.cache-family }}-${{ hashFiles('MODULE.bazel.lock', 'MODULE.bazel', '.bazelversion', 'core/MODULE.bazel', 'core/MODULE.bazel.lock', 'core/.bazelversion', '.aspect/version.axl', '**/*.bzl') }}
+        restore-keys: bazel-repository-v3-${{ runner.os }}-${{ runner.arch }}-${{ inputs.cache-family }}-
 
     - name: Set up Aspect CLI
       uses: aspect-build/setup-aspect@2306377a61c45954ab2df7c7311698b109364352 # v2026.26.9
