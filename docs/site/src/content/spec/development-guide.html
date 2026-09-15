@@ -123,13 +123,19 @@
   </p>
   <p>
     Wine tests, functional checks, and demos share the digest in
-    <code>tools/wine/image.txt</code>. Normal CI pulls that public GHCR image;
+    <code>tools/wine/image.txt</code>. Normal CI pulls that private GHCR image
+    using its job-scoped <code>GITHUB_TOKEN</code> with <code>packages: read</code>;
     it does not install Wine from apt or rebuild a Docker image. Docker remains
     a host service. Use <code>aspect hovel-ci image-lock</code> to refresh the
     checksum-locked package inputs and <code>aspect hovel-ci image-build</code>
     to validate an offline image build. The trusted Wine environment workflow
     publishes image updates; update the checked-in digest only after its tests
-    pass and anonymous pulls work. An explicit <code>HOVEL_WINE_BIN</code>
+    pass and the repository has read access under the package's Manage Actions
+    access settings. <code>aspect hovel-ci image-prepare</code> logs in using a
+    temporary Docker configuration, pulls the pinned digest, and removes the
+    credentials before tests run. Local builds use an existing Docker login or
+    an explicitly supplied <code>GITHUB_TOKEN</code> and <code>GITHUB_ACTOR</code>;
+    keep credentials outside the repository. An explicit <code>HOVEL_WINE_BIN</code>
     retains the host-Wine adapter for local operator use.
   </p>
   <p>

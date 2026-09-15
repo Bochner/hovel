@@ -90,6 +90,17 @@ def test_ci_has_complete_scopes_and_bounded_jobs() -> None:
     assert workflow.count("timeout-minutes:") == workflow.count("runs-on:")
 
 
+def test_private_wine_auth_is_limited_to_image_preparation() -> None:
+    workflow = FILES["ci.yml"]
+    wine = workflow.split("  squatter-wine:\n", 1)[1]
+    assert workflow.count("packages: read") == 1
+    assert "packages: read" in wine
+    prepare, runtime = wine.split("      - name: Verify Wine integration and materialize demo", 1)
+    assert "GITHUB_TOKEN: ${{ github.token }}" in prepare
+    assert "aspect hovel-ci image-prepare" in prepare
+    assert "GITHUB_TOKEN" not in runtime
+
+
 def test_every_build_job_configures_and_cleans_up_buildbuddy() -> None:
     for filename in ("ci.yml", "release.yml"):
         workflow = FILES[filename]
