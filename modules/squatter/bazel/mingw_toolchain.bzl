@@ -51,6 +51,15 @@ def _config_impl(ctx):
 
     features = [
         feature(
+            name = "deterministic_pe",
+            enabled = True,
+            flag_sets = [flag_set(
+                actions = _LINK_ACTIONS,
+                # GNU ld otherwise embeds the current time in PE headers.
+                flag_groups = [flag_group(flags = ["-Wl,--no-insert-timestamp"])],
+            )],
+        ),
+        feature(
             name = "path_normalization",
             enabled = True,
             flag_sets = [
